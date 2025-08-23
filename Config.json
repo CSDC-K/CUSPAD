@@ -1,0 +1,40 @@
+{
+    "ActiveTheme" : "DARK",
+    "Font" : "Default",
+    "FontSize" : 17,
+    "FontB" : "bold",
+
+    
+
+    "DropDownBorderRadius" : 3,
+
+    "DARK": {
+        "PageColor" : "#2F2E2E",
+        "FrameColor" : "#1E1E1E",
+        "TextColor" : "#FFFFFF",
+
+        "MenuBarColor" : "#171717",
+        "TopBarTitleColor" : "#FFFFFF",
+        "MenuBarHoverColor" : "#1D1D1D",
+        "MenuBarTextColor" : "#FFFFFF",
+        "DropDownColor" : "#151515",
+        "DropDownTextColor" : "#FFFFFF",
+        "DropDownHoverColor" : "#161616"
+    },
+
+    "LIGHT": {
+        "PageColor" : "#FFFFFF",
+        "FrameColor" : "#CFCFCF",
+
+        "TextColor" : "#000000",
+
+        "MenuBarColor" : "#DCDCDC",
+        "TopBarTitleColor" : "#000000",
+        "MenuBarHoverColor" : "#FFFFFF",
+        "MenuBarTextColor" : "#000000",
+        "DropDownColor" : "#FFFFFF",
+        "DropDownTextColor" : "#000000",
+        "DropDownHoverColor" : "#E0E0E0"
+    }
+    
+}
