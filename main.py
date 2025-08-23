@@ -52,7 +52,7 @@ class NotePad:
 
         info_label = customtkinter.CTkLabel(
             NPadMenuBar, 
-            text="Cus-Pad v1.1", 
+            text="Cus-Pad v1.0", 
             text_color=self.config["TopBarTitleColor"],
             font=("Default", 16,"bold")
         )
@@ -215,7 +215,7 @@ class About:
         self.AboutPage.resizable(False, False)
         self.AboutPage.title("About")
 
-        title = customtkinter.CTkLabel(self.AboutPage,text="CUSPAD 1.1",font=("Helvetica",40,"bold"),text_color=configs[ActiveTheme]["TextColor"])
+        title = customtkinter.CTkLabel(self.AboutPage,text="CUSPAD 1.0",font=("Helvetica",40,"bold"),text_color=configs[ActiveTheme]["TextColor"])
         title.place(x=85,y=75)
 
         label1 = customtkinter.CTkLabel(self.AboutPage,text="Made By CSDC-K Kuzey", font=("Default",18,"italic"),text_color=configs[ActiveTheme]["TextColor"])
