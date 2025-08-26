@@ -1,14 +1,20 @@
 # Made By CSDC-K Kuzey
-
+# V1.2
 import customtkinter
 import CTkMenuBar
 import json
 import sys
 import os
+import time
+from threading import Thread
+from random import choice
+import tkinter as tk
 
 from customtkinter import filedialog
 
-with open("Config.json", "r") as configFile:
+import google.genai as _CallGemini
+
+with open("ThemeConfig.json", "r") as configFile:
     configs = json.load(configFile)
 
 if configs["ActiveTheme"] == "DARK":
@@ -16,10 +22,8 @@ if configs["ActiveTheme"] == "DARK":
 elif configs["ActiveTheme"] == "LIGHT":
     ActiveTheme = "LIGHT"
 
-
-
-"#e0e0e0"
-
+with open("UserConfig.json", "r") as userconfigFile:
+    user_configs = json.load(userconfigFile)
 
 class NotePad:
     def __init__(self):
@@ -34,7 +38,6 @@ class NotePad:
         self.NPad.grid_columnconfigure(0, weight=1)
 
         # auto binds:
-
         self.NPad.bind("<Control-plus>", lambda event: self.zoomin())
         self.NPad.bind("<Control-minus>", lambda event: self.zoomout())
         self.NPad.bind("<Control-q>", lambda event: self.quit())
@@ -43,16 +46,50 @@ class NotePad:
         self.NPad.bind("<Control-s>", lambda event: self.saveFile())
         self.NPad.bind("<Control-o>", lambda event: self.openFile())
         self.NPad.bind("<Control-n>", lambda event: self.newFile())
-
-
         
+
+        self.AiFrame = customtkinter.CTkFrame(self.NPad, width=300, height=570, fg_color=self.config["FrameColor"])
+        self.AiFrame.place(x=1200, y=40)
+        self.aiTitleLabel = customtkinter.CTkLabel(self.AiFrame, text="Ai Chat", font=("Helvetica", 18, "bold"), text_color=self.config["TextColor"])
+        self.aiTitleLabel.pack(pady=(10, 5))
+
+
+        self.chatArea = customtkinter.CTkScrollableFrame(self.AiFrame, width=280, height=455, fg_color="transparent")
+        self.chatArea.pack(pady=(5, 5))
+        def _on_mouse_wheel(event):
+            if event.delta:  # Windows / Mac
+                self.chatArea._parent_canvas.yview_scroll(-1*(event.delta//120), "units")
+            else:  # Linux (event.num = 4,5 up,down)
+                if event.num == 4:
+                    self.chatArea._parent_canvas.yview_scroll(-1, "units")
+                elif event.num == 5:
+                    self.chatArea._parent_canvas.yview_scroll(1, "units")
+
+        self.chatArea._parent_canvas.bind_all("<MouseWheel>", _on_mouse_wheel)  # Windows/Mac
+        self.chatArea._parent_canvas.bind_all("<Button-4>", _on_mouse_wheel)    # Linux up
+        self.chatArea._parent_canvas.bind_all("<Button-5>", _on_mouse_wheel)    # Linux down
+
+        self.input_frame = customtkinter.CTkFrame(self.AiFrame, fg_color="transparent")
+        self.input_frame.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
+        self.input_frame.grid_columnconfigure(0, weight=1)
+
+        self.msgEntry = customtkinter.CTkEntry(self.input_frame, width=230, height=40, placeholder_text="Bir mesaj yazın...", text_color=self.config["TextColor"], border_width=0)
+        self.msgEntry.grid(row=0, column=0, padx=(0, 5), sticky="ew")
+        self.msgEntry.bind("<Return>", lambda event=None: self.send_message())
+
+        self.msgButton = customtkinter.CTkButton(self.input_frame, text="Gönder", fg_color=self.config["AiButtonColor"], hover_color=self.config["AiButtonHoverColor"], width=40, height=40, text_color="#FFFFFF", command=self.send_message)
+        self.msgButton.grid(row=0, column=1, padx=(5, 0))
+
+
+
+        self.add_bubble("Hello! How can i help you?", "ai")
 
         NPadMenuBar = CTkMenuBar.CTkMenuBar(master=self.NPad,bg_color=self.config["MenuBarColor"])
         NPadMenuBar.grid(row=0, column=0, sticky="ew")
 
         info_label = customtkinter.CTkLabel(
             NPadMenuBar, 
-            text="Cus-Pad v1.0", 
+            text="Cus-Pad v1.2", 
             text_color=self.config["TopBarTitleColor"],
             font=("Default", 16,"bold")
         )
@@ -70,7 +107,7 @@ class NotePad:
         editMenu = NPadMenuBar.add_cascade(text="Edit",text_color=self.config["MenuBarTextColor"],hover_color=self.config["MenuBarHoverColor"],font=("Default", 16,"bold"))
         viewMenu = NPadMenuBar.add_cascade(text="View",text_color=self.config["MenuBarTextColor"],hover_color=self.config["MenuBarHoverColor"],font=("Default", 16,"bold"))
         aboutMenu = NPadMenuBar.add_cascade(text="About",text_color=self.config["MenuBarTextColor"],hover_color=self.config["MenuBarHoverColor"],font=("Default", 16,"bold"))
-
+        aiMenu = NPadMenuBar.add_cascade(text="Plugins",text_color=self.config["MenuBarTextColor"],hover_color=self.config["MenuBarHoverColor"],font=("Default", 16,"bold"))
 
         fileDownCase = CTkMenuBar.CustomDropdownMenu(widget=fileMenu, fg_color=self.config["DropDownColor"],text_color=self.config["DropDownTextColor"],hover_color=self.config["DropDownHoverColor"],
                                                      bg_color=self.config["DropDownColor"],corner_radius=configs["DropDownBorderRadius"])
@@ -79,6 +116,8 @@ class NotePad:
         viewDownCase = CTkMenuBar.CustomDropdownMenu(widget=viewMenu, fg_color=self.config["DropDownColor"],text_color=self.config["DropDownTextColor"],hover_color=self.config["DropDownHoverColor"],
                                                      bg_color=self.config["DropDownColor"],corner_radius=configs["DropDownBorderRadius"])      
         aboutDownCase = CTkMenuBar.CustomDropdownMenu(widget=aboutMenu, fg_color=self.config["DropDownColor"],text_color=self.config["DropDownTextColor"],hover_color=self.config["DropDownHoverColor"],
+                                                     bg_color=self.config["DropDownColor"],corner_radius=configs["DropDownBorderRadius"])      
+        aiDownCase = CTkMenuBar.CustomDropdownMenu(widget=aiMenu, fg_color=self.config["DropDownColor"],text_color=self.config["DropDownTextColor"],hover_color=self.config["DropDownHoverColor"],
                                                      bg_color=self.config["DropDownColor"],corner_radius=configs["DropDownBorderRadius"])      
 
 
@@ -101,12 +140,13 @@ class NotePad:
         viewDownCase.add_option(option="Zoom Out\t\tCTRL -", command=self.zoomout)
 
         aboutDownCase.add_option(option="About", command=lambda:About(self.NPad))
+        aiDownCase.add_option(option="Gemini", command=self._Gemi)
 
 
         self.NPadTextBox = customtkinter.CTkTextbox(self.NPad,fg_color=self.config["FrameColor"],width=910,height=570,border_spacing=0,text_color=self.config["TextColor"],
                                                font=(configs["Font"], configs["FontSize"], configs["FontB"]),
                                                undo=True)
-        self.NPadTextBox.grid(row=1, column=0, padx=25, pady=(20,10), sticky="nsew")
+        self.NPadTextBox.place(x=25,y=40)
 
         self.NPad.mainloop()
 
@@ -156,16 +196,11 @@ class NotePad:
         self.openedFilePath = None
         self.fileinfo_label.configure(text="Not Named File")
 
-
-
-
     def quit(self):
         self.NPadTextBox.delete("1.0", "end")
         self.openedFilePath = None
         self.fileinfo_label.configure(text="")
         
-
-
     # EDITS
     def Undo(self):
         self.NPadTextBox.edit_undo()
@@ -187,7 +222,6 @@ class NotePad:
         self.NPadTextBox.tag_add("sel", "1.0", "end-1c")
 
     # VIEWS
-
     def zoomin(self):
         configs["FontSize"] = configs["FontSize"] + 1
         self.NPadTextBox.configure(font=(configs["Font"], configs["FontSize"], configs["FontB"]))
@@ -196,11 +230,131 @@ class NotePad:
         configs["FontSize"] = configs["FontSize"] - 1
         self.NPadTextBox.configure(font=(configs["Font"], configs["FontSize"], configs["FontB"]))
 
+    # Animations
+    def slide_widget_right_to_left(self,widget, start_x, end_x, y, step=5, delay=10):
+        widget.place(x=start_x, y=y)
+        def move():
+            nonlocal start_x
+            if start_x > end_x:
+                start_x -= step
+                widget.place(x=start_x, y=y)
+                widget.after(delay, move)
+        move()
 
+    def slide_widget_left_to_right(self,widget, start_x, end_x, y, step=5, delay=10):
+        widget.place(x=start_x, y=y)
+        def move():
+            nonlocal start_x
+            if start_x < end_x:
+                start_x += step
+                widget.place(x=start_x, y=y)
+                widget.after(delay, move)
+        move()
+
+    def animate_width(self,widget, target_width, step=8, delay=6):
+        info = widget.place_info()
+        current_width = info.get("width")
+        if not current_width:
+            current_width = widget.winfo_width()
+        current_width = int(current_width)
+
+        def animate():
+            nonlocal current_width
+            if current_width < target_width:
+                current_width += step
+                if current_width > target_width:
+                    current_width = target_width
+                widget.place_configure(width=current_width)
+                widget.after(delay, animate)
+            elif current_width > target_width:
+                current_width -= step
+                if current_width < target_width:
+                    current_width = target_width
+                widget.place_configure(width=current_width)
+                widget.after(delay, animate)
+        animate()
+
+    def _Gemi(self):
+        if configs["GeminiKey"] != "NONE":
+            if self.NPadTextBox.winfo_width() < 601:
+                self.NPadTextBox.configure(width=910)
+                self.AiFrame.place(x=1500,y=40)
+                self.slide_widget_left_to_right(self.AiFrame,start_x=635,end_x=1250,y=40,step=7,delay=3)
+                self.animate_width(widget=self.NPadTextBox,target_width=910)
+            else:
+                self.animate_width(widget=self.NPadTextBox,target_width=600)
+                self.slide_widget_right_to_left(self.AiFrame,start_x=1250,end_x=635,y=40,step=8,delay=3)
+
+
+    def add_bubble(self, message, sender):
+        """Sohbet balonu oluşturup arayüze ekler."""
+        message_bubble = customtkinter.CTkFrame(self.chatArea, corner_radius=15)
+
+        message_label = customtkinter.CTkLabel(
+            master=message_bubble,
+            text=message,
+            font=(configs["Font"], configs["FontSize"]-3),
+            text_color=self.config["TextColor"],
+            wraplength=250,
+            justify="left",
+            anchor="w"
+        )
+
+        def copy_text(event):
+            self.NPad.clipboard_clear()
+            self.NPad.clipboard_append(message)
+
+        message_label.bind("<Button-3>", copy_text)
+
+        if sender == "user":
+            message_bubble.pack(pady=(2, 2), padx=(50, 5), anchor="e")
+            message_bubble.configure(fg_color=self.config["UserChatBubbleColor"])
+            message_label.configure(fg_color=self.config["UserChatBubbleColor"])
+            message_label.pack(side="right", padx=10, pady=5)
+
+        elif sender == "ai":
+            message_bubble.pack(pady=(2, 2), padx=(5, 50), anchor="w")
+            message_bubble.configure(fg_color=self.config["AiChatBubbleColor"])
+            message_label.configure(fg_color=self.config["AiChatBubbleColor"])
+            message_label.pack(side="left", padx=10, pady=5)
+
+
+        self.chatArea.update_idletasks()
+        self.chatArea._parent_canvas.yview_moveto(1.0)
+
+    
+    def send_message(self):
+        """Kullanıcının mesajını gönderir ve yapay zeka yanıtını tetikler."""
+        self.user_message = self.msgEntry.get().strip()
+        if self.user_message:
+            self.add_bubble(self.user_message, "user")
+            self.msgEntry.delete(0, "end")
+            
+
+            thread = Thread(target=self._ResponseForGemini)
+            thread.start()
+
+    def _ResponseForGemini(self):
+        if user_configs["AI"]["GeminiKey"] == "NONE":
+            self.NPad.after(0, self.add_bubble, "GeminiApi Key Not Founded.", "ai")
+            return
+        else:
+            try:
+                client = _CallGemini.Client(api_key=user_configs["AI"]["GeminiKey"])
+                ai_response = client.models.generate_content(
+                    model="gemini-2.5-flash-lite",
+                    contents=self.user_message
+                    
+                )
+                print(self.user_message)
+            except Exception as e:
+                print(e)
+
+            finally:
+                self.NPad.after(0, self.add_bubble, ai_response.text, "ai")
 
 class ThemeEditor:
     def __init__(self, parent):
-
         self.ThemePage = customtkinter.CTkToplevel(parent)
         self.ThemePage.geometry("400x300")
         self.ThemePage.resizable(False, False)
@@ -209,18 +363,17 @@ class ThemeEditor:
 
 class About:
     def __init__(self, parent):
-
         self.AboutPage = customtkinter.CTkToplevel(parent)
         self.AboutPage.geometry("400x300")
         self.AboutPage.resizable(False, False)
         self.AboutPage.title("About")
+        self.AboutPage.grab_set()
 
-        title = customtkinter.CTkLabel(self.AboutPage,text="CUSPAD 1.0",font=("Helvetica",40,"bold"),text_color=configs[ActiveTheme]["TextColor"])
+        title = customtkinter.CTkLabel(self.AboutPage,text="CUSPAD 1.2",font=("Helvetica",40,"bold"),text_color=configs[ActiveTheme]["TextColor"])
         title.place(x=85,y=75)
 
         label1 = customtkinter.CTkLabel(self.AboutPage,text="Made By CSDC-K Kuzey", font=("Default",18,"italic"),text_color=configs[ActiveTheme]["TextColor"])
         label1.place(x=105,y=150)  
-
 
 if __name__ == "__main__":
     app = NotePad()
