@@ -1,4 +1,4 @@
-# Made By CSDC-K Kuzey
+# Made By CSDC-K
 # V1.2
 import customtkinter
 import CTkMenuBar
